@@ -30,11 +30,11 @@
 
 #define PRU_NUM 	 0
 //number of PRU cycles to achieve 50Hz
-#define ADDEND1	 	 4000000
+#define PERIOD_CYCLES	 	 4000000
 //PWM value of 1060us
-#define ADDEND2		 212000
+#define DUTY_CYCLES		 212000
 //trigger value to tell the PRU to stop
-#define ADDEND3		 0
+#define STOP_FLAG		 0
 
 //memory addresses
 #define DDR_BASEADDR     0x80000000
@@ -132,9 +132,9 @@ int main (void)
     DDR_regaddr2 = ddrMem + OFFSET_DDR + 0x00000004;
     DDR_regaddr3 = ddrMem + OFFSET_DDR + 0x00000008;
 
-    *(unsigned int*) DDR_regaddr1 = ADDEND1;
-    *(unsigned int*) DDR_regaddr2 = ADDEND2;
-    *(unsigned int*) DDR_regaddr3 = ADDEND3;
+    *(unsigned int*) DDR_regaddr1 = PERIOD_CYCLES;
+    *(unsigned int*) DDR_regaddr2 = DUTY_CYCLES;
+    *(unsigned int*) DDR_regaddr3 = STOP_FLAG;
 
 
 
@@ -171,7 +171,8 @@ int main (void)
     printf("\tINFO: PRU completed transfer.\r\n");
     prussdrv_pru_clear_event (PRU0_ARM_INTERRUPT, PRU_EVTOUT_0);
 
-    /* Check if example passed */
+    /*
+    // Check if example passed
     if ( LOCAL_examplePassed(PRU_NUM) )
     {
         printf("Example executed succesfully.\r\n");
@@ -180,7 +181,8 @@ int main (void)
     {
         printf("Example failed.\r\n");
     }
-    
+    */
+
     /* Disable PRU and close memory mapping*/
     prussdrv_pru_disable(PRU_NUM); 
     prussdrv_exit ();
@@ -190,54 +192,4 @@ int main (void)
     return(0);
 }
 
-/*****************************************************************************
-* Local Function Definitions                                                 *
-*****************************************************************************/
-
-static int LOCAL_exampleInit (  )
-{
-    void *DDR_regaddr1, *DDR_regaddr2, *DDR_regaddr3;	
-
-    /* open the device */
-    mem_fd = open("/dev/mem", O_RDWR);
-    if (mem_fd < 0) {
-        printf("Failed to open /dev/mem (%s)\n", strerror(errno));
-        return -1;
-    }	
-
-    /* map the DDR memory */
-    ddrMem = mmap(0, 0x0FFFFFFF, PROT_WRITE | PROT_READ, MAP_SHARED, mem_fd, DDR_BASEADDR);
-    if (ddrMem == NULL) {
-        printf("Failed to map the device (%s)\n", strerror(errno));
-        close(mem_fd);
-        return -1;
-    }
-    
-    /* Store Addends in DDR memory location */
-    DDR_regaddr1 = ddrMem + OFFSET_DDR;
-    DDR_regaddr2 = ddrMem + OFFSET_DDR + 0x00000004;
-    DDR_regaddr3 = ddrMem + OFFSET_DDR + 0x00000008;
-
-    *(unsigned long*) DDR_regaddr1 = ADDEND1;
-    *(unsigned long*) DDR_regaddr2 = ADDEND2;
-    *(unsigned long*) DDR_regaddr3 = ADDEND3;
-
-    return(0);
-}
-
-static unsigned short LOCAL_examplePassed ( unsigned short pruNum )
-{
-    unsigned int result_0, result_1, result_2;
-
-     /* Allocate Shared PRU memory. */
-    prussdrv_map_prumem(PRUSS0_SHARED_DATARAM, &sharedMem);
-    sharedMem_int = (unsigned int*) sharedMem;
-
-    result_0 = sharedMem_int[OFFSET_SHAREDRAM];
-    result_1 = sharedMem_int[OFFSET_SHAREDRAM + 1];
-    result_2 = sharedMem_int[OFFSET_SHAREDRAM + 2];
-
-    return ((result_0 == ADDEND1) & (result_1 ==  ADDEND2) & (result_2 ==  ADDEND3)) ;
-
-}
 
